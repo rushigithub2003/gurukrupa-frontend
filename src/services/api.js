@@ -4,7 +4,7 @@ import axios from 'axios';
 //const api = axios.create({ baseURL: '/api' }); //not used
 
 const api = axios.create({
-  baseURL: "https://gurukrupa-backend-zat5.onrender.com"  // this for local
+  baseURL: "https://gurukrupa-backend-zat5.onrender.com/api"  // this for local
 });
 
 
