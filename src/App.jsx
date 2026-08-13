@@ -85,12 +85,10 @@ export default function App() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-64 text-center">
-          <p className="text-gray-700 text-lg font-medium mb-4">Loading</p>
+        <div className="flex flex-col items-center">
+          <div className="w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
 
-          <div className="relative h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-            <div className="absolute top-0 left-0 h-full w-1/3 bg-blue-600 rounded-full animate-pulse"></div>
-          </div>
+          <h2 className="text-lg font-medium text-gray-700">Loading...</h2>
         </div>
       </div>
     );
