@@ -1,9 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import api from "./services/api";
 
@@ -56,10 +52,7 @@ export default function App() {
           message: data.message || "",
         });
       } catch (error) {
-        console.error(
-          "Maintenance check failed:",
-          error
-        );
+        console.error("Maintenance check failed:", error);
 
         // If maintenance API fails,
         // allow the website to load normally.
@@ -91,10 +84,14 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <h2 className="text-xl font-semibold">
-          Loading...
-        </h2>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-64 text-center">
+          <p className="text-gray-700 text-lg font-medium mb-4">Loading</p>
+
+          <div className="relative h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+            <div className="absolute top-0 left-0 h-full w-1/3 bg-blue-600 rounded-full animate-pulse"></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -104,11 +101,7 @@ export default function App() {
   // ============================================================
 
   if (maintenance.enabled) {
-    return (
-      <Maintenance
-        message={maintenance.message}
-      />
-    );
+    return <Maintenance message={maintenance.message} />;
   }
 
   // ============================================================
@@ -121,30 +114,15 @@ export default function App() {
 
       <main className="min-h-screen">
         <Routes>
-          <Route
-            path="/"
-            element={<HomePage />}
-          />
+          <Route path="/" element={<HomePage />} />
 
-          <Route
-            path="/products"
-            element={<ProductsPage />}
-          />
+          <Route path="/products" element={<ProductsPage />} />
 
-          <Route
-            path="/products/:id"
-            element={<ProductDetailPage />}
-          />
+          <Route path="/products/:id" element={<ProductDetailPage />} />
 
-          <Route
-            path="/about"
-            element={<AboutPage />}
-          />
+          <Route path="/about" element={<AboutPage />} />
 
-          <Route
-            path="/contact"
-            element={<ContactPage />}
-          />
+          <Route path="/contact" element={<ContactPage />} />
         </Routes>
       </main>
 
