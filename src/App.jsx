@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+} from "react-router-dom";
 
-import api from "./services/api";
+import { maintenanceAPI } from "./services/api";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -16,13 +20,13 @@ import Maintenance from "./pages/Maintenance";
 
 export default function App() {
   // ============================================================
-  // LOADING STATE
+  // LOADING
   // ============================================================
 
   const [loading, setLoading] = useState(true);
 
   // ============================================================
-  // MAINTENANCE STATE
+  // MAINTENANCE
   // ============================================================
 
   const [maintenance, setMaintenance] = useState({
@@ -31,37 +35,136 @@ export default function App() {
   });
 
   // ============================================================
-  // CHECK MAINTENANCE — ON INITIAL APP LOAD ONLY
+  // ADMIN PREVIEW
+  // ============================================================
+
+  const [previewMode, setPreviewMode] = useState(false);
+
+  // ============================================================
+  // INITIAL WEBSITE CHECK
   // ============================================================
 
   useEffect(() => {
     let isMounted = true;
 
-    const checkMaintenance = async () => {
+    const initializeWebsite = async () => {
       try {
-        const response = await api.get("/maintenance");
+        // ======================================================
+        // 1. CHECK FOR PREVIEW TOKEN IN URL
+        // ======================================================
 
-        const data = response.data;
+        const params = new URLSearchParams(
+          window.location.search
+        );
+
+        let previewToken = params.get("preview");
+
+        // ======================================================
+        // 2. IF NO URL TOKEN, CHECK SESSION STORAGE
+        // ======================================================
+
+        if (!previewToken) {
+          previewToken =
+            sessionStorage.getItem(
+              "gurukrupa_preview_token"
+            );
+        }
+
+        // ======================================================
+        // 3. VALIDATE PREVIEW TOKEN
+        // ======================================================
+
+        if (previewToken) {
+          try {
+            const response =
+              await maintenanceAPI.validatePreview(
+                previewToken
+              );
+
+            if (
+              response.data?.valid === true
+            ) {
+              if (isMounted) {
+                setPreviewMode(true);
+              }
+
+              // ------------------------------------------------
+              // Save token for refresh
+              // ------------------------------------------------
+
+              sessionStorage.setItem(
+                "gurukrupa_preview_token",
+                previewToken
+              );
+
+              // ------------------------------------------------
+              // Remove token from URL
+              // ------------------------------------------------
+
+              if (
+                window.location.search
+              ) {
+                window.history.replaceState(
+                  {},
+                  document.title,
+                  window.location.pathname
+                );
+              }
+
+            } else {
+              // Invalid token
+              sessionStorage.removeItem(
+                "gurukrupa_preview_token"
+              );
+            }
+
+          } catch (previewError) {
+            console.warn(
+              "Website preview validation failed:",
+              previewError
+            );
+
+            // Remove invalid/expired token
+            sessionStorage.removeItem(
+              "gurukrupa_preview_token"
+            );
+          }
+        }
+
+        // ======================================================
+        // 4. CHECK MAINTENANCE STATUS
+        // ======================================================
+
+        const response =
+          await maintenanceAPI.get();
 
         if (!isMounted) {
           return;
         }
 
+        const data =
+          response.data || {};
+
         setMaintenance({
           enabled: Boolean(data.enabled),
-          message: data.message || "",
+          message:
+            data.message ||
+            "Our website is currently under maintenance. Please visit again later.",
         });
-      } catch (error) {
-        console.error("Maintenance check failed:", error);
 
-        // If maintenance API fails,
-        // allow the website to load normally.
+      } catch (error) {
+        console.error(
+          "Website initialization failed:",
+          error
+        );
+
         if (isMounted) {
           setMaintenance({
             enabled: false,
             message: "",
           });
         }
+
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -69,10 +172,8 @@ export default function App() {
       }
     };
 
-    // Run ONLY once when App mounts
-    checkMaintenance();
+    initializeWebsite();
 
-    // Cleanup
     return () => {
       isMounted = false;
     };
@@ -84,12 +185,40 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center">
-          <div className="w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+      <div className="flex min-h-screen items-center justify-center bg-white px-5">
 
-          <h2 className="text-lg font-medium text-gray-700">Loading...</h2>
+        <div className="w-full max-w-xs text-center">
+
+          <div className="mb-7 flex justify-center">
+
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-100 bg-white shadow-lg">
+
+              <img
+                src="/log-guru.png"
+                alt="Gurukrupa Enterprises"
+                className="h-16 w-16 object-contain"
+              />
+
+            </div>
+
+          </div>
+
+          <h2 className="text-lg font-semibold text-slate-800">
+            Gurukrupa Enterprises
+          </h2>
+
+          <p className="mt-2 text-sm text-slate-400">
+            Loading website...
+          </p>
+
+          <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-slate-100">
+
+            <div className="h-full w-1/3 animate-pulse rounded-full bg-blue-600" />
+
+          </div>
+
         </div>
+
       </div>
     );
   }
@@ -98,8 +227,15 @@ export default function App() {
   // MAINTENANCE MODE
   // ============================================================
 
-  if (maintenance.enabled) {
-    return <Maintenance message={maintenance.message} />;
+  if (
+    maintenance.enabled &&
+    !previewMode
+  ) {
+    return (
+      <Maintenance
+        message={maintenance.message}
+      />
+    );
   }
 
   // ============================================================
@@ -108,25 +244,46 @@ export default function App() {
 
   return (
     <Router>
+
       <Navbar />
 
       <main className="min-h-screen">
+
         <Routes>
-          <Route path="/" element={<HomePage />} />
 
-          <Route path="/products" element={<ProductsPage />} />
+          <Route
+            path="/"
+            element={<HomePage />}
+          />
 
-          <Route path="/products/:id" element={<ProductDetailPage />} />
+          <Route
+            path="/products"
+            element={<ProductsPage />}
+          />
 
-          <Route path="/about" element={<AboutPage />} />
+          <Route
+            path="/products/:id"
+            element={<ProductDetailPage />}
+          />
 
-          <Route path="/contact" element={<ContactPage />} />
+          <Route
+            path="/about"
+            element={<AboutPage />}
+          />
+
+          <Route
+            path="/contact"
+            element={<ContactPage />}
+          />
+
         </Routes>
+
       </main>
 
       <Footer />
 
       <WhatsAppButton />
+
     </Router>
   );
 }
