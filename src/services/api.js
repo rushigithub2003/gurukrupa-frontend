@@ -1,5 +1,5 @@
 // src/api.js — Axios instance and API helpers for the user website
-import axios from 'axios';
+// import axios from 'axios';
 
 //const api = axios.create({ baseURL: '/api' }); //not used
 
